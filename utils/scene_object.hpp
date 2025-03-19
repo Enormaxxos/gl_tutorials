@@ -86,7 +86,7 @@ public:
 			<< "Scale: " << glm::to_string(scale) << "\n"
 			<< "Up: " << glm::to_string(getUpVector()) << "\n"
 			<< "Right: " << glm::to_string(getRightVector()) << "\n"
-			<< "Forward: " << glm::to_string(getForwardVector()) << "\n";
+			<< "Forward: " << glm::to_string(getForwardVector()) << std::endl;
 	}
 
 protected:
