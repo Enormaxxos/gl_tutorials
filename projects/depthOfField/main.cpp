@@ -44,9 +44,9 @@ int main() {
 		auto window = Window();
 		MouseTracking mouseTracking;
 		Config config;
-		Camera camera(window.aspectRatio());
-		camera.setPosition(glm::vec3(0.0f, 10.0f, 50.0f));
-		camera.lookAt(glm::vec3());
+		Camera camera(window.aspectRatio(), 60);
+		camera.setPosition(glm::vec3(-6.45035f, 15.8327f, 48.0387f));
+		camera.setRotation(glm::quat(0.938374f, -0.13043f, -0.109222f, -0.300853f));
 		SpotLight light;
 		light.setPosition(glm::vec3(25.0f, 40.0f, 30.0f));
 		light.lookAt(glm::vec3());
@@ -71,8 +71,8 @@ int main() {
 			});
 
 		OGLMaterialFactory materialFactory;
-		materialFactory.loadShadersFromDir("./shaders/");
-		materialFactory.loadTexturesFromDir("./data/textures/");
+		materialFactory.loadShadersFromDir("../../../projects/depthOfField/shaders/");
+		materialFactory.loadTexturesFromDir("../../../data/textures/");
 
 		OGLGeometryFactory geometryFactory;
 
@@ -91,11 +91,11 @@ int main() {
 		renderer.initialize(window.size()[0], window.size()[1]);
 		window.runLoop([&] {
 			renderer.shadowMapPass(scenes[config.currentSceneIdx], light);
-			 // renderer.shadowMapPass(scenes[config.currentSceneIdx], camera);
 
 			renderer.clear();
 			renderer.geometryPass(scenes[config.currentSceneIdx], camera, RenderOptions{"solid"});
 			renderer.compositingPass(light);
+			renderer.depthOfFieldPass();
 		});
 	} catch (ShaderCompilationError &exc) {
 		std::cerr

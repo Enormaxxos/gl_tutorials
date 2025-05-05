@@ -32,6 +32,7 @@ inline std::vector<CADescription> getColorNormalPositionAttachments() {
 		// To store values outside the range [0,1] we need different internal format then normal GL_RGBA
 		{ GL_RGBA, GL_FLOAT, GL_RGBA32F },
 		{ GL_RGBA, GL_FLOAT, GL_RGBA32F },
+		{ GL_RED, GL_FLOAT, GL_RED }
 	};
 }
 
@@ -41,6 +42,12 @@ inline std::vector<CADescription> getSingleColorAttachment() {
 	};
 }
 
+inline std::vector<CADescription> getDoubleColorAttachment() {
+	return {
+		{ GL_RGBA, GL_FLOAT, GL_RGBA32F },
+		{ GL_RED, GL_FLOAT, GL_RED },
+	};
+}
 
 class Renderer {
 public:
@@ -49,10 +56,10 @@ public:
 	{
 		mCompositingShader = std::static_pointer_cast<OGLShaderProgram>(
 				mMaterialFactory.getShaderProgram("compositing"));
-		// mShadowMapShader = std::static_pointer_cast<OGLShaderProgram>(
-		// 	mMaterialFactory.getShaderProgram("solid_color"));
 		mShadowMapShader = std::static_pointer_cast<OGLShaderProgram>(
 			mMaterialFactory.getShaderProgram("shadowmap"));
+		mDoFShader = std::static_pointer_cast<OGLShaderProgram>(
+			mMaterialFactory.getShaderProgram("depthOfField"));
 	}
 
 	void initialize(int aWidth, int aHeight) {
@@ -61,15 +68,8 @@ public:
 		GL_CHECK(glClearColor(0.0f, 0.0f, 0.0f, 0.0f));
 
 		mFramebuffer = std::make_unique<Framebuffer>(aWidth, aHeight, getColorNormalPositionAttachments());
+		mDoFFramebuffer = std::make_unique<Framebuffer>(aWidth, aHeight, getDoubleColorAttachment());
 		mShadowmapFramebuffer = std::make_unique<Framebuffer>(600, 600, getSingleColorAttachment());
-		// mShadowmapFramebuffer = std::make_unique<ShadowmapFramebuffer>(600, 600);
-		mCompositingParameters = {
-			{ "u_diffuse", TextureInfo("diffuse", mFramebuffer->getColorAttachment(0)) },
-			{ "u_normal", TextureInfo("diffuse", mFramebuffer->getColorAttachment(1)) },
-			{ "u_position", TextureInfo("diffuse", mFramebuffer->getColorAttachment(2)) },
-			// { "u_shadowMap", TextureInfo("shadowMap", mShadowmapFramebuffer->getDepthMap()) },
-			{ "u_shadowMap", TextureInfo("shadowMap", mShadowmapFramebuffer->getColorAttachment(0)) },
-		};
 	}
 
 	void clear() {
@@ -120,12 +120,25 @@ public:
 
 	template<typename TLight>
 	void compositingPass(const TLight &aLight) {
+		mDoFFramebuffer->bind();
+		mDoFFramebuffer->setDrawBuffers();
 		GL_CHECK(glDisable(GL_DEPTH_TEST));
 		GL_CHECK(glClearColor(0.0f, 0.0f, 0.0f, 0.0f));
-		mCompositingParameters["u_lightPos"] = aLight.getPosition();
-		mCompositingParameters["u_lightMat"] = aLight.getViewMatrix();
-		mCompositingParameters["u_lightProjMat"] = aLight.getProjectionMatrix();
-		mQuadRenderer.render(*mCompositingShader, mCompositingParameters);
+
+		MaterialParameterValues compParams{
+			{ "u_diffuse", TextureInfo("diffuse", mFramebuffer->getColorAttachment(0)) },
+			{ "u_normal", TextureInfo("diffuse", mFramebuffer->getColorAttachment(1)) },
+			{ "u_position", TextureInfo("diffuse", mFramebuffer->getColorAttachment(2)) },
+			{ "u_depth", TextureInfo("diffuse", mFramebuffer->getColorAttachment(3)) },
+			{ "u_shadowMap", TextureInfo("shadowMap", mShadowmapFramebuffer->getColorAttachment(0)) },
+			{ "u_lightPos", aLight.getPosition() },
+			{ "u_lightMat", aLight.getViewMatrix() },
+			{ "u_lightProjMat", aLight.getProjectionMatrix() }
+		};
+
+		mQuadRenderer.render(*mCompositingShader, compParams);
+
+		mDoFFramebuffer->unbind();
 	}
 
 	template<typename TScene, typename TLight>
@@ -173,15 +186,34 @@ public:
 		mShadowmapFramebuffer->unbind();
 	}
 
+	void depthOfFieldPass() {
+    GL_CHECK(glDisable(GL_DEPTH_TEST));
+    GL_CHECK(glClearColor(0.0f, 0.0f, 0.0f, 0.0f));
+    GL_CHECK(glClear(GL_COLOR_BUFFER_BIT));
+
+    MaterialParameterValues dofParameters = {
+        { "u_sceneTexture", TextureInfo("sceneTexture", mDoFFramebuffer->getColorAttachment(0)) },
+        { "u_depthTexture", TextureInfo("depthTexture", mDoFFramebuffer->getColorAttachment(1)) },
+        { "u_focusDistance", 1.0f },
+        { "u_focusRange", 1.0f },
+    };
+
+    mQuadRenderer.render(*mDoFShader, dofParameters);
+	}
+
 protected:
 	int mWidth = 100;
 	int mHeight = 100;
+
 	std::unique_ptr<Framebuffer> mFramebuffer;
+	std::unique_ptr<Framebuffer> mDoFFramebuffer;
 	std::unique_ptr<Framebuffer> mShadowmapFramebuffer;
-	// std::unique_ptr<ShadowmapFramebuffer> mShadowmapFramebuffer;
-	MaterialParameterValues mCompositingParameters;
+
 	QuadRenderer mQuadRenderer;
+
 	std::shared_ptr<OGLShaderProgram> mCompositingShader;
 	std::shared_ptr<OGLShaderProgram> mShadowMapShader;
+	std::shared_ptr<OGLShaderProgram> mDoFShader;
+
 	OGLMaterialFactory &mMaterialFactory;
 };
