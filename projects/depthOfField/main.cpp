@@ -51,7 +51,10 @@ int main() {
 		light.setPosition(glm::vec3(25.0f, 40.0f, 30.0f));
 		light.lookAt(glm::vec3());
 
+		float dofFocusStep = 0.05f;
 
+		float dofFocusDistance = 1.0f;
+		float dofFocusRange = 1.0f;
 
 		window.onCheckInput([&camera, &mouseTracking](GLFWwindow *aWin) {
 				mouseTracking.update(aWin);
@@ -59,13 +62,27 @@ int main() {
 					camera.orbit(-0.4f * mouseTracking.offset(), glm::vec3());
 				}
 			});
-		window.setKeyCallback([&config, &camera](GLFWwindow *aWin, int key, int scancode, int action, int mods) {
+		window.setKeyCallback([&config, &camera, &dofFocusDistance, &dofFocusRange, dofFocusStep](GLFWwindow *aWin, int key, int scancode, int action, int mods) {
 				if (action == GLFW_PRESS) {
 					switch (key) {
 					case GLFW_KEY_ENTER:
-						camera.setPosition(glm::vec3(0.0f, 10.0f, 50.0f));
-						camera.lookAt(glm::vec3());
+						camera.setPosition(glm::vec3(-6.45035f, 15.8327f, 48.0387f));
+						camera.setRotation(glm::quat(0.938374f, -0.13043f, -0.109222f, -0.300853f));
+
+						dofFocusDistance = 1.0f;
+						dofFocusRange = 1.0f;
 						break;
+					case GLFW_KEY_UP:
+						dofFocusDistance = std::max(dofFocusDistance - dofFocusStep, 0.0f);
+						break;
+					case GLFW_KEY_DOWN:
+						dofFocusDistance += dofFocusStep;
+						break;
+					case GLFW_KEY_RIGHT:
+						dofFocusRange = std::max(dofFocusRange - dofFocusStep, 0.0f);
+						break;
+					case GLFW_KEY_LEFT:
+						dofFocusRange += dofFocusStep;
 					}
 				}
 			});
@@ -95,7 +112,7 @@ int main() {
 			renderer.clear();
 			renderer.geometryPass(scenes[config.currentSceneIdx], camera, RenderOptions{"solid"});
 			renderer.compositingPass(light);
-			renderer.depthOfFieldPass();
+			renderer.depthOfFieldPass(dofFocusDistance, dofFocusRange);
 		});
 	} catch (ShaderCompilationError &exc) {
 		std::cerr

@@ -186,7 +186,7 @@ public:
 		mShadowmapFramebuffer->unbind();
 	}
 
-	void depthOfFieldPass() {
+	void depthOfFieldPass(float focusDistance, float focusRange) {
     GL_CHECK(glDisable(GL_DEPTH_TEST));
     GL_CHECK(glClearColor(0.0f, 0.0f, 0.0f, 0.0f));
     GL_CHECK(glClear(GL_COLOR_BUFFER_BIT));
@@ -194,8 +194,8 @@ public:
     MaterialParameterValues dofParameters = {
         { "u_sceneTexture", TextureInfo("sceneTexture", mDoFFramebuffer->getColorAttachment(0)) },
         { "u_depthTexture", TextureInfo("depthTexture", mDoFFramebuffer->getColorAttachment(1)) },
-        { "u_focusDistance", 1.0f },
-        { "u_focusRange", 1.0f },
+        { "u_focusDistance", focusDistance },
+        { "u_focusRange", focusRange },
     };
 
     mQuadRenderer.render(*mDoFShader, dofParameters);
