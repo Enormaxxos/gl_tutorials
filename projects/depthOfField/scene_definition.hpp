@@ -42,7 +42,7 @@ inline SimpleScene createCottageScene(MaterialFactory& aMaterialFactory, Geometr
 		);
 		oak->prepareRenderData(aMaterialFactory, aGeometryFactory);
 
-		oak->setPosition(glm::vec3{-5,0,i * 10 - 20});
+		oak->setPosition(glm::vec3{-5,0,i * 10 - 40});
 		scene.addObject(oak);
 
 		auto oak2 = std::make_shared<LoadedMeshObject>("./data/geometry/oak.obj");
@@ -58,7 +58,7 @@ inline SimpleScene createCottageScene(MaterialFactory& aMaterialFactory, Geometr
 		);
 		oak2->prepareRenderData(aMaterialFactory, aGeometryFactory);
 
-		oak2->setPosition(glm::vec3{-15,0,i * 10 - 20});
+		oak2->setPosition(glm::vec3{-15,0,i * 10 - 40});
 		scene.addObject(oak2);
 	}
 
