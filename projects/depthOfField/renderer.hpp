@@ -60,6 +60,8 @@ public:
 			mMaterialFactory.getShaderProgram("shadowmap"));
 		mDoFShader = std::static_pointer_cast<OGLShaderProgram>(
 			mMaterialFactory.getShaderProgram("depthOfField"));
+		mDoFTestingShader = std::static_pointer_cast<OGLShaderProgram>(
+			mMaterialFactory.getShaderProgram("depthOfFieldTesting"));
 	}
 
 	void initialize(int aWidth, int aHeight) {
@@ -186,7 +188,7 @@ public:
 		mShadowmapFramebuffer->unbind();
 	}
 
-	void depthOfFieldPass(float focusDistance, float focusRange) {
+	void depthOfFieldPass(float focusDistance, float focusRange, bool testing) {
     GL_CHECK(glDisable(GL_DEPTH_TEST));
     GL_CHECK(glClearColor(0.0f, 0.0f, 0.0f, 0.0f));
     GL_CHECK(glClear(GL_COLOR_BUFFER_BIT));
@@ -198,7 +200,8 @@ public:
         { "u_focusRange", focusRange },
     };
 
-    mQuadRenderer.render(*mDoFShader, dofParameters);
+		if (testing) mQuadRenderer.render(*mDoFTestingShader, dofParameters);
+    else mQuadRenderer.render(*mDoFShader, dofParameters);
 	}
 
 protected:
@@ -214,6 +217,7 @@ protected:
 	std::shared_ptr<OGLShaderProgram> mCompositingShader;
 	std::shared_ptr<OGLShaderProgram> mShadowMapShader;
 	std::shared_ptr<OGLShaderProgram> mDoFShader;
+	std::shared_ptr<OGLShaderProgram> mDoFTestingShader;
 
 	OGLMaterialFactory &mMaterialFactory;
 };

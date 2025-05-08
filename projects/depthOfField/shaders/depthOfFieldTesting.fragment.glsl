@@ -18,5 +18,16 @@ void main() {
 
     float blurFactor = clamp(abs(depth - focusDistance) / focusRange, 0.0, 1.0);
 
-    FragColor = vec4(blurFactor, blurFactor, blurFactor, 1);
+    // simple box blur for demonstration (can be better, but im no artist)
+    vec4 color = vec4(0.0);
+    int kernelSize = int(blurFactor * 10.0);
+    for (int x = -kernelSize; x <= kernelSize; ++x) {
+        for (int y = -kernelSize; y <= kernelSize; ++y) {
+            vec2 offset = vec2(x, y) / vec2(textureSize(u_sceneTexture, 0));
+            color += texture(u_sceneTexture, texCoords + offset);
+        }
+    }
+    color /= pow(2 * kernelSize + 1, 2);
+
+    FragColor = color;
 }

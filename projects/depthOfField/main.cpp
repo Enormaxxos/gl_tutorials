@@ -56,13 +56,15 @@ int main() {
 		float dofFocusDistance = 1.0f;
 		float dofFocusRange = 1.0f;
 
+		bool dofTesting = true;
+
 		window.onCheckInput([&camera, &mouseTracking](GLFWwindow *aWin) {
 				mouseTracking.update(aWin);
 				if (glfwGetMouseButton(aWin, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
 					camera.orbit(-0.4f * mouseTracking.offset(), glm::vec3());
 				}
 			});
-		window.setKeyCallback([&config, &camera, &dofFocusDistance, &dofFocusRange, dofFocusStep](GLFWwindow *aWin, int key, int scancode, int action, int mods) {
+		window.setKeyCallback([&config, &camera, &dofFocusDistance, &dofFocusRange, dofFocusStep, &dofTesting](GLFWwindow *aWin, int key, int scancode, int action, int mods) {
 				if (action == GLFW_PRESS) {
 					switch (key) {
 					case GLFW_KEY_ENTER:
@@ -74,15 +76,23 @@ int main() {
 						break;
 					case GLFW_KEY_UP:
 						dofFocusDistance = std::max(dofFocusDistance - dofFocusStep, 0.0f);
+						std::cout << "Distance: " << dofFocusDistance << std::endl;
 						break;
-					case GLFW_KEY_DOWN:
+						case GLFW_KEY_DOWN:
 						dofFocusDistance += dofFocusStep;
+						std::cout << "Distance: " << dofFocusDistance << std::endl;
 						break;
-					case GLFW_KEY_RIGHT:
+						case GLFW_KEY_RIGHT:
 						dofFocusRange = std::max(dofFocusRange - dofFocusStep, 0.0f);
+						std::cout << "Range: " << dofFocusRange << std::endl;
 						break;
-					case GLFW_KEY_LEFT:
+						case GLFW_KEY_LEFT:
 						dofFocusRange += dofFocusStep;
+						std::cout << "Range: " << dofFocusRange << std::endl;
+						break;
+						case GLFW_KEY_T:
+						dofTesting = !dofTesting;
+						std::cout << "Testing: " << (dofTesting ? "True" : "False") << std::endl;
 					}
 				}
 			});
@@ -112,7 +122,7 @@ int main() {
 			renderer.clear();
 			renderer.geometryPass(scenes[config.currentSceneIdx], camera, RenderOptions{"solid"});
 			renderer.compositingPass(light);
-			renderer.depthOfFieldPass(dofFocusDistance, dofFocusRange);
+			renderer.depthOfFieldPass(dofFocusDistance, dofFocusRange, dofTesting);
 		});
 	} catch (ShaderCompilationError &exc) {
 		std::cerr
